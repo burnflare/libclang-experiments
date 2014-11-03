@@ -16,13 +16,14 @@ into:
     	NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];  
 		if (![defaults objectForKey:@"firstRun"])
 			[defaults setObject:[NSDate date] forKey:@"firstRun"];
-
-			[[NSUserDefaults standardUserDefaults] synchronize];
-			return YES;
+			// First run!
+		} else {
+			// Not first run!
+		}
 	}
 So fun.
 
-First things first, I was pretty confident that Xcode was relying on some extra framework/tool to get it's magic done but I was not sure what it is. I sampled my Xcode process by running `sample Xcode` in the Terminal. On top of showing all current call stacks of the specified process, `sample` also lists out all the binary images(Frameworks, Static and dynamic libraries) that Xcode has loaded or linked to. Most of the images here were unintersting but one of them caught my attention:
+First things first, I was pretty confident that Xcode was relying on some extra framework/tool to get it's magic done but I was not sure what it is. I tried `spindump` and `iosnoop` on the Xcode process but that didn't reveal anything interesting. Then I tried to sample the Xcode process by running `sample Xcode` in the Terminal. On top of showing all current call stacks of the specified process, `sample` also lists out all the binary images(Frameworks, Static and dynamic libraries) that Xcode has loaded or linked to. Most of the images here were unintersting but one of them caught my attention:
 
 `       0x103002000 -        0x103a94fff +libclang.dylib (600.0.54) <21EB2141-3192-33E4-8641-8CD0F9DA0B20> /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/libclang.dylib
 `
@@ -45,7 +46,7 @@ Although Xcode comes with a precompiled version of libclang built-in, we still w
 	cd llvm/tools
 	git clone http://llvm.org/git/clang.git
 	
-##XCode configuration
+##Configure Xcode
 Now, let's verify that the `libclang-experiments` project is in a valid state, ensuring it's linked to all the right binaries and header paths. If you're trying to get libclang working on your own project, you should reproduce the steps mentioned in this section.
 
 In the project navigator, click on your project, then click on *Build Phases* in the main window. Expand the *Link Binary with Libraries* disclosure, click on the *+* and choose *Add Other...*. Thankfully we don't have to build our own version of libclang.dylib as Xcode comes bundled with one. We can link directly against that! Hit ⌘⇧G and paste this in and click *Open*
@@ -86,7 +87,7 @@ Importing the header `clang-c/Index.h` that lives in our llvm project that we ch
 	    "-I", "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/6.0/include",
     	"-Wno-objc-property-implementation"};
 
-Clang loves to eat all the arguments for breakfast, lunch and dinner. If you want to have fun, [take a look](https://www.dropbox.com/s/zls6pdfhrsuxiqa/Screenshot%202014-11-03%2011.27.09.png?dl=0) at the default list of arguments Xcode sends Clang whenever it tries to perform a compile. Have fun reverse engineering that!
+Clang loves to eat all the arguments for breakfast, lunch and dinner. If you want to have fun, [take a look](https://www.dropbox.com/s/zls6pdfhrsuxiqa/Screenshot%202014-11-03%2011.27.09.png?dl=0) at the default list of arguments Xcode sends Clang whenever it tries to build. Have fun understanding that!
 
 I tried to be as minimal as possible with my Clang arguments. Tried a bunch of permurations with all kinds of stuff and and this is what I ended up with:
 
@@ -96,50 +97,62 @@ I tried to be as minimal as possible with my Clang arguments. Tried a bunch of p
 - `-I <path>`: Add the path to the compiler's include search path.
 - `-Wno-objc-property-implementation`: Surpressing a frequent warning that shows up while compiling some of Apple's iOS8 headers.
 
-Fun, right?
+Fun, right? Ok moving on!
 
 	CXTranslationUnit translationUnit;
-	
 
-	
+A CXIndex consists of multiple Translation Units. A single translation unit is typically used to represent a single source file. I'm defining the translation unit globally here so that methods outside `main()` can use it.
+
 	void m_indexDeclaration(CXClientData client_data, const CXIdxDeclInfo *declaration);
-	
 	static IndexerCallbacks indexerCallbacks = {
 	    .indexDeclaration = m_indexDeclaration,
 	};
 	
+When we get libclang to parse through our source file, we can implement various callbacks that would triggered. In this project, we only care about the `IndexerCallbacks.indexDeclaration` callback. It's also possible to implement a callback whenever the preprocessor includes a file, more on the other IndexerCallbacks callbacks [here](http://clang.llvm.org/doxygen/structIndexerCallbacks.html)
+	
 	const char *methodToFind = "application:didFinishLaunchingWithOptions:";
-	const char *injectCode = "[self.window = no];\n\t";
+	const char *injectCode = "NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];\n\tif (![defaults objectForKey:@\"firstRun\"])\n\t\t[defaults setObject:[NSDate date] forKey:@\"firstRun\"];\n\t\t// First run!\n\t} else {\n\t\t// Not first run!\n\t}\n\t";
+	
+`methodToFind` is the signature of the method we're looking for.  
+`injectCode` is the escaped, nicely formatted code snippet we're trying to inject into our `AppDelegate.m`.
 	
 	int main(int argc, const char * argv[]) {
 	    CXIndex index = clang_createIndex(1, 1);
 	    
-	    // TODO
-	    char* sourceFile = "/Users/vishnu/Desktop/FlappyCode/FlappyCode/AppDelegate.m";
+	    const char *sourceFile = "/Users/vishnu/Desktop/FlappyCode/FlappyCode/AppDelegate.m";
 	    
 	    if (!index) {
 	        printf("Couldn't create CXIndex");
 	        return 0;
 	    }
+	    
+Intialize an empty CXIndex, to get things going. You would notice here that I've decided to hardcode the path to my `AppDelegate.m`, a better programmer would choose to retrieve this from `argv[]` or user input.
+	    
 	    translationUnit = clang_parseTranslationUnit(index,
 	                                                 sourceFile,
 	                                                 args,
 	                                                 sizeof(args) / sizeof(args[0]),
 	                                                 NULL,
 	                                                 0,
-	                                                 CXTranslationUnit_DetailedPreprocessingRecord);
+	                                                 CXTranslationUnit_None);
 	    
 	    if (!translationUnit) {
 	        printf("Couldn't create CXTranslationUnit of %s", sourceFile);
 	        return 0;
 	    }
 	    
+Initializing the single translation unit we'll be using for our project. The first four arguments pass in the CXIndex, path to source file, Clang arguments array and size of that array respectively. The 5th & 6th argument is used to send files to libclang that have not been saved to disk yet. I'm guessing IDEs(like Xcode) using this to get syntax highighting for code as you're typing on the fly. The last parameter is used to send in special options for the parsing. An interesting option I found here was `CXTranslationUnit_Incomplete` which would tell the parser that we're working with an intensionally incompelte translation unit here, proceed decisively!
+	    
 	    CXIndexAction action = clang_IndexAction_create(index);
 	    clang_indexTranslationUnit(action, NULL, &indexerCallbacks, sizeof(indexerCallbacks), CXIndexOpt_SuppressWarnings, translationUnit);
 	    
 	    clang_disposeIndex(index);
+	    clang_disposeTranslationUnit(translationUnit);
+		clang_IndexAction_dispose(action);
 	    return 0;
 	}
+	
+
 	
 	void m_indexDeclaration(CXClientData client_data, const CXIdxDeclInfo *declaration) {
 	    if (declaration->cursor.kind == CXCursor_ObjCInstanceMethodDecl) {
@@ -199,5 +212,6 @@ Fun, right?
 	    }
 	}
 
-
+##Flaws & Improvements
+- App delegate file
 We live in exciting times.

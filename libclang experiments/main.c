@@ -16,8 +16,6 @@ const char * args[] = { "-c", "-arch", "i386",
 
 CXTranslationUnit translationUnit;
 
-
-
 void m_indexDeclaration(CXClientData client_data, const CXIdxDeclInfo *declaration);
 
 static IndexerCallbacks indexerCallbacks = {
@@ -25,13 +23,12 @@ static IndexerCallbacks indexerCallbacks = {
 };
 
 const char *methodToFind = "application:didFinishLaunchingWithOptions:";
-const char *injectCode = "[self.window = no];\n\t";
+const char *injectCode = "NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];\n\tif (![defaults objectForKey:@\"firstRun\"])\n\t\t[defaults setObject:[NSDate date] forKey:@\"firstRun\"];\n\t\t// First run!\n\t} else {\n\t\t// Not first run!\n\t}\n\t";
 
 int main(int argc, const char * argv[]) {
     CXIndex index = clang_createIndex(1, 1);
     
-    // TODO
-    char* sourceFile = "/Users/vishnu/Desktop/FlappyCode/FlappyCode/AppDelegate.m";
+    const char *sourceFile = "/Users/vishnu/Desktop/FlappyCode/FlappyCode/AppDelegate.m";
     
     if (!index) {
         printf("Couldn't create CXIndex");
@@ -43,7 +40,7 @@ int main(int argc, const char * argv[]) {
                                                  sizeof(args) / sizeof(args[0]),
                                                  NULL,
                                                  0,
-                                                 CXTranslationUnit_DetailedPreprocessingRecord);
+                                                 CXTranslationUnit_None);
     
     if (!translationUnit) {
         printf("Couldn't create CXTranslationUnit of %s", sourceFile);
@@ -54,6 +51,8 @@ int main(int argc, const char * argv[]) {
     clang_indexTranslationUnit(action, NULL, &indexerCallbacks, sizeof(indexerCallbacks), CXIndexOpt_SuppressWarnings, translationUnit);
     
     clang_disposeIndex(index);
+    clang_disposeTranslationUnit(translationUnit);
+    clang_IndexAction_dispose(action);
     return 0;
 }
 
@@ -108,6 +107,8 @@ void m_indexDeclaration(CXClientData client_data, const CXIdxDeclInfo *declarati
                     strcat(output, injectCode);
                     strcat(output, string+offset);
                     printf(output);
+                    
+//                    clang_disposeTranslationUnit(translationUnit);
                     break;
                 }
             }
