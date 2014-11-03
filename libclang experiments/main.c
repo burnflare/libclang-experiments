@@ -19,12 +19,17 @@ static IndexerCallbacks indexerCallbacks = {
     .indexDeclaration = m_indexDeclaration,
 };
 
+const char *methodToFind = "application:didFinishLaunchingWithOptions:";
+const char *injectCode = "[self.window = no];\n\t";
+
 int main(int argc, const char * argv[]) {
     CXIndex index = clang_createIndex(1, 1);
+    
+    // TODO
     char* sourceFile = "/Users/vishnu/Desktop/FlappyCode/FlappyCode/AppDelegate.m";
     
     if (!index) {
-        printf("Couldn't create index");
+        printf("Couldn't create CXIndex");
         return 0;
     }
     translationUnit = clang_parseTranslationUnit(index,
@@ -34,8 +39,9 @@ int main(int argc, const char * argv[]) {
                                                  NULL,
                                                  0,
                                                  CXTranslationUnit_DetailedPreprocessingRecord);
+    
     if (!translationUnit) {
-        printf("Couldn't create translation unit ofr %s", sourceFile);
+        printf("Couldn't create CXTranslationUnit of %s", sourceFile);
         return 0;
     }
     
@@ -48,7 +54,7 @@ int main(int argc, const char * argv[]) {
 
 void m_indexDeclaration(CXClientData client_data, const CXIdxDeclInfo *declaration) {
     if (declaration->cursor.kind == CXCursor_ObjCInstanceMethodDecl) {
-        if (strcmp(declaration->entityInfo->name, "application:didFinishLaunchingWithOptions:") == 0) {
+        if (strcmp(declaration->entityInfo->name, methodToFind) == 0) {
             CXToken *tokens;
             unsigned int numTokens;
             CXCursor *cursors = 0;
@@ -62,7 +68,7 @@ void m_indexDeclaration(CXClientData client_data, const CXIdxDeclInfo *declarati
             for(int i=0; i < numTokens; i++) {
                 if (next == 0) {
                     CXTokenKind tKind = clang_getTokenKind(tokens[i]);
-                    char * tString = clang_getCString(clang_getTokenSpelling(translationUnit, tokens[i]));
+                    const char *tString = clang_getCString(clang_getTokenSpelling(translationUnit, tokens[i]));
                     if (tKind == CXToken_Punctuation && strcmp(tString, "{") == 0) {
                         next = 1;
                         continue;
@@ -79,11 +85,9 @@ void m_indexDeclaration(CXClientData client_data, const CXIdxDeclInfo *declarati
                                               &column,
                                               &offset);
                     
-                    char* filename = clang_getCString(clang_getFileName(file));
-                    printf(clang_getCString(clang_getFileName(file)));
-                    printf(" line - %d offset - %d column - %d",line, offset, column);
+                    const char* filename = clang_getCString(clang_getFileName(file));
+                    printf("Method found in %s in line %d, offset %d, column %d", clang_getCString(clang_getFileName(file)), line, offset, column);
                     
-                    char* insert = "[self.window = no];\n\t";
                     FILE * f;
                     f = fopen(filename, "r+");
                     fseek(f, 0, SEEK_END);
@@ -96,7 +100,7 @@ void m_indexDeclaration(CXClientData client_data, const CXIdxDeclInfo *declarati
                     
                     char *output[sizeof(string)+offset];
                     strncpy(output, string, offset);
-                    strcat(output, insert);
+                    strcat(output, injectCode);
                     strcat(output, string+offset);
                     printf(output);
                     break;
