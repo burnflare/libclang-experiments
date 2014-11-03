@@ -62,7 +62,7 @@ Next, move on to the *Build Settings* section and do the following
 	- `$(SRCROOT)` is a Xcode variable that points to the root of this project. For me, that's `/Users/vishnu/dev/libclang-experiments`. Obviously Your Roots Will Vary(YRWV).
 - Add a new Library Search Paths: `$(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib`
 	- Even though we've 'added' `libclang.dylib` into our Xcode's project navigator, we still need to tell the compiler to look for dynamic libraries in that search path or else it won't find it.
-- Enabe Modules(C and Objective-C) - Set this to No.
+- Enable Modules(C and Objective-C) - Set this to No.
 	
 ##Explaining source code
 The original draft of this project was written in minimal C and mostly Objective-C -- I have an allergy for C, the language, it gives me cooties. But after some deliberation, I decided to refactor the entire app in C as going back and forth between C and Obj-C data types just added more muck to the code for little benefit. And C's not ***that*** bad :P
