@@ -25,8 +25,7 @@ So fun.
 
 First things first, I was pretty confident that Xcode was relying on some extra framework/tool to get it's magic done but I was not sure what it is. I tried `spindump` and `iosnoop` on the Xcode process but that didn't reveal anything interesting. Then I tried to sample the Xcode process by running `sample Xcode` in the Terminal. On top of showing all current call stacks of the specified process, `sample` also lists out all the binary images(Frameworks, Static and dynamic libraries) that Xcode has loaded or linked to. Most of the images here were unintersting but one of them caught my attention:
 
-`       0x103002000 -        0x103a94fff +libclang.dylib (600.0.54) <21EB2141-3192-33E4-8641-8CD0F9DA0B20> /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/libclang.dylib
-`
+	0x103002000 -        0x103a94fff +libclang.dylib (600.0.54) <21EB2141-3192-33E4-8641-8CD0F9DA0B20> /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/libclang.dylib
 
 Further googling mojo revealed that libclang was exactly what I was looking for. The LLVM project trivially describes [libclang](http://clang.llvm.org/doxygen/group__CINDEX.html) as "a stable high level C interface to clang". If you don't already know, Clang is modern compiler for C, C++ and Objective-C that uses LLVM as it's backend. Clang was originally sarted by Apple as a modern replacement to the 25 year old, very much hacked, recursively named, GNU Compiler Collection(GCC). The Clang project is also now stable enough to be the primary compiler for all iOS/Mac apps for the past few years. And libclang seemed like a way to 'talk' to Clang. Perfect, exactly what I wanted.
 
