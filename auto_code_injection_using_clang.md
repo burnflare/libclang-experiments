@@ -3,7 +3,7 @@
 ##Motivation
 I've always been fascinated by IDEs. Long have I wondered how do they what they do: Syntax highlighting, code completion, method refactoring and so much more. Recently, I had a bunch of time on my hands and I decided to figure out how an IDE works it's magic. I chose to play around with XCode because that's my favourite IDE.
 
-Here's the challenge I presented to myself: Given any typical modern iOS project, use the IDE's AST(Abstract Syntax Tree) parsing tools to insert a bunch of code into a predetermined method. To keep this simple, we'll add code to an app's `application:didFinishLaunchingWithOptions` since we can almost always gaurentee that method would exist. So I would like this turn this:
+Here's the challenge I presented to myself: Given any typical modern iOS project, use the IDE's AST(Abstract Syntax Tree) parsing tools to insert a bunch of code into a predetermined method. To keep this simple, we'll add code to an app's `application:didFinishLaunchingWithOptions` since we can almost always guarantee that method would exist. So I would like this turn this:
 
 	- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary 	*)launchOptions {
     	// Override point for customization after application launch.
