@@ -43,9 +43,23 @@ Although Xcode comes with a precompiled version of libclang built-in, we still w
 ##XCode configuration
 Now, let's verify that the `libclang-experiments` project is in a valid state, ensuring it's linked to all the right binaries and header paths. If you're trying to get libclang working on your own project, you should reproduce the steps mentioned in this section.
 
+In the project navigator, click on your project, then click on *Build Phases* in the main window. Expand the *Link Binary with Libraries* disclosure, click on the *+* and choose *Add Other...*. Thankfully we don't have to build our own version of libclang.dylib as Xcode comes bundled with one. We can link directly against that! Hit ⌘⇧G and paste this in and click *Open*
 
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/libclang.dylib
+	
+Next, move on to the *Build Settings* section and do the following
 
-Before I explain the source code, let's checkout the project and clone out LLVM
+- Add a new Runpath Search Paths: `$(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib`
+	- `libclang.dylib` relies heavily on other libraries and it's complete paths are not known during `libclang.dylib`'s creation. It replies on the runtime's dynamic loader to find these libraries so we'll have to provide it with an additional path to search through.
+	- `$(DEVELOPER_DIR)` is an Xcode variable that points to `/Applications/Xcode.app/Contents/Developer` or wherever Xcode is installed.
+- Add a new Header Search Paths: `$(SRCROOT)/llvm/tools/clang/include` (Resursive)
+	- We checked-out LLVM&Clang so that we could use some of it's headers, let's point to the ones we care about
+	- `$(SRCROOT)` is a Xcode variable that points to the root of this project. For me, that's `/Users/vishnu/dev/libclang-experiments`. Obviously Your Roots Will Vary(YRWV).
+- Add a new Library Search Paths: `$(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib`
+	- Even though we've 'added' `libclang.dylib` into our Xcode's project navigator, we still need to tell the compiler to look for dynamic libraries in that search path or else it won't find it.
+	
+asdf
+
 
 	//
 	//  main.c
