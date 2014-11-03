@@ -1,7 +1,7 @@
 Reposted from my NUS Hacker [digest entry](http://digest.nushackers.org/2014/11/02/libclang-ast-parsing/)
 #Auto Code Injection with libclang
 ##Motivation
-I've always been fascinated by IDEs. Long have I wondered how do they what they do: syntax highlighting, code completion, method refactoring and so much more. Recently, I had a bunch of time on my hands and I decided to figure out how an IDE works its magic. I chose to play around with XCode because that's my favourite IDE.
+I've always been fascinated by IDEs. Long have I wondered how do they what they do: syntax highlighting, code completion, method refactoring and so much more. Recently, I had a bunch of time on my hands and I decided to figure out how an IDE works its magic. I chose to play around with Xcode because that's my favourite IDE.
 
 Here's the challenge I presented to myself: given any typical modern iOS project, use the IDE's AST(Abstract Syntax Tree) parsing tools to insert a bunch of code into a predetermined method. To keep this simple, we'll add code to an app's `application:didFinishLaunchingWithOptions` since we can almost always guarantee that this method would exist. So I would like to turn this:
 
@@ -21,7 +21,6 @@ into:
 			// Not first run!
 		}
 	}
-So fun.
 
 First things first, I was pretty confident that Xcode was relying on some extra framework/tool to get its magic done but I was not sure what it was. I tried `spindump` and `iosnoop` on the Xcode process but that didn't reveal anything interesting. Then I tried to sample the Xcode process by running `sample Xcode` in the Terminal. On top of showing all current call stacks of the specified process, `sample` also lists out all the binary images(Frameworks, Static and dynamic libraries) that Xcode has loaded or linked to. Most of the images here were uninteresting but one of them caught my attention:
 
@@ -29,7 +28,7 @@ First things first, I was pretty confident that Xcode was relying on some extra 
 
 Further googling revealed that libclang was exactly what I was looking for. The LLVM project trivially describes [libclang](http://clang.llvm.org/doxygen/group__CINDEX.html) as "a stable high level C interface to clang". If you don't already know, Clang is modern compiler for C, C++ and Objective-C that uses LLVM as it's backend. Clang was originally sarted by Apple as a modern replacement to the 25 year old, very-much-hacked, recursively named, GNU Compiler Collection(GCC). The Clang project is also now stable enough to be the primary compiler for all iOS/Mac apps for the past few years. And libclang seemed like a way to 'talk' to Clang. Perfect, exactly what I wanted.
 
-Unfortunately, libclang isn't very easy to use. Its website is just a simple doxygen page with no usage or sample code. Unable to find sample code anywhere on the internet, it was painful, frustrating process and I made a lot of mistakes all over the place. This post aims to save you time and a bunch of mistakes I made while trying to tame down libclang.
+Unfortunately, libclang isn't very easy to use. Its website is just a simple doxygen page with no usage or sample code. Unable to find sample code anywhere on the internet, it was a painful, frustrating process and I made a lot of mistakes all over the place. This post aims to save you time and a bunch of mistakes I made while trying to tame down libclang.
 
 Alright, let's begin the tutorial!
 
@@ -39,7 +38,7 @@ Let's clone the repo
 	git clone https://github.com/burnflare/libclang-experiments.git
 	cd libclang-experiments
 
-Although Xcode comes with a precompiled version of libclang built-in, we still need to get our headers from the Clang project's repo(Try to make sure you're following the same directory structure as I am here)
+Although Xcode comes with a precompiled version of libclang built-in, we still need to get our headers from the Clang project's repo (Try to make sure you're following the same directory structure as I am here)
 	
 	git clone http://llvm.org/git/llvm.git
 	cd llvm/tools
@@ -59,13 +58,13 @@ Next, move on to the *Build Settings* section and do the following:
 	- `$(DEVELOPER_DIR)` is an Xcode variable that points to `/Applications/Xcode.app/Contents/Developer` or wherever Xcode is installed.
 - Add a new Header Search Paths: `$(SRCROOT)/llvm/tools/clang/include` (Resursive)
 	- We checked-out LLVM&Clang so that we could use some of its headers, so let's point to the ones we care about
-	- `$(SRCROOT)` is a Xcode variable that points to the root of this project. For me, that's `/Users/vishnu/dev/libclang-experiments`. Obviously, Your Roots Will Vary(YRWV).
+	- `$(SRCROOT)` is a Xcode variable that points to the root of this project. For me, that's `/Users/vishnu/dev/libclang-experiments`. Obviously, Your Roots May Vary(YRMV).
 - Add a new Library Search Paths: `$(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib`
 	- Even though we've 'added' `libclang.dylib` into our Xcode's project navigator, we still need to tell the compiler to look for dynamic libraries in that search path or else it won't find it.
 - Enable Modules(C and Objective-C) - Set this to No.
 	
 ##Explaining source code
-The original draft of this project was written in minimal C and mostly Objective-C. I have an allergy for C, the language(it gives me cooties). But after some deliberation, I decided to refactor the entire app in C as going back and forth between C and Obj-C data types just added more muck to the code for little benefit. And C's not ***that*** bad :P
+The original draft of this project was written in minimal C and mostly Objective-C. I have an allergy to C, the language(it gives me the shivers). But after some deliberation, I decided to refactor the entire app in C as going back and forth between C and Obj-C data types just added more muck to the code for little benefit. And C's not ***that*** bad :P
 
 
 	//
@@ -284,7 +283,7 @@ This is just my very first attempt in trying to demystify libclang. I've probabl
 - Right now, after finding out which token I want to insert myself into, I'm using C's ugly `fopen` and `fwrite` APIs to actual do the code insertion for me. I'm pretty sure a competent AST parser like libclang would have the ability for me to programatically create CXTokens and append them into my CXTranslationUnit and get the parser to generate the source file for me. I'm sure this is possible, but I've not discovered it yet, so please tell me if you do!
 
 ##Conclusion
-It was very exciting trying to pry open Xcode and look at how its refactoring and code completion tools work. Given many months, I might be able to build my own IDE too, wrapped around libclang.
+It was very exciting trying to pry open Xcode and look at how its refactoring and code completion tools work. Given some time, I might be able to build my own IDE too, wrapped around libclang.
 
 If you have any thoughts, comments or improvements, feel free to shout at me on [Twitter](http://twitter.com/burnflare), email me at vishnu [at] nushackers [dot] org or create an issue on the [Github](https://github.com/burnflare/libclang-experiments/) repo.
 
