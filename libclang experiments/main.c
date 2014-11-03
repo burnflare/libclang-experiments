@@ -7,6 +7,7 @@
 //
 
 #include <stdio.h>
+#include "string.h"
 #include "clang-c/Index.h"
 
 const char * args[] = { "-c", "-arch", "i386",
@@ -77,22 +78,22 @@ void m_indexDeclaration(CXClientData client_data, const CXIdxDeclInfo *declarati
                         next = 1;
                         continue;
                     }
-                } else {
+                }
+                else {
                     CXFile file;
                     unsigned line;
-                    unsigned column;
                     unsigned offset;
                     
                     clang_getSpellingLocation(clang_getCursorLocation(cursors[i+1]),
                                               &file,
                                               &line,
-                                              &column,
+                                              NULL,
                                               &offset);
                     
                     const char* filename = clang_getCString(clang_getFileName(file));
-                    printf("Method found in %s in line %d, offset %d, column %d", clang_getCString(clang_getFileName(file)), line, offset, column);
+                    printf("Method found in %s in line %d, offset %d", clang_getCString(clang_getFileName(file)), line, offset);
                     
-                    FILE * f;
+                    FILE *f;
                     f = fopen(filename, "r+");
                     fseek(f, 0, SEEK_END);
                     long fsize = ftell(f);

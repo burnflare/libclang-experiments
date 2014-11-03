@@ -78,6 +78,7 @@ The original draft of this project was written in minimal C and mostly Objective
 	//
 	
 	#include <stdio.h>
+	#include "string.h"
 	#include "clang-c/Index.h"
 
 Importing the header `clang-c/Index.h` that lives in our llvm project that we checked out. This header recursively includes everything else we would need to play with libclang
@@ -141,7 +142,7 @@ Intialize an empty CXIndex, to get things going. You would notice here that I've
 	        return 0;
 	    }
 	    
-Initializing the single translation unit we'll be using for our project. The first four arguments pass in the CXIndex, path to source file, Clang arguments array and size of that array respectively. The 5th & 6th argument is used to send files to libclang that have not been saved to disk yet. I'm guessing IDEs(like Xcode) using this to get syntax highighting for code as you're typing on the fly. The last parameter is used to send in special options for the parsing. An interesting option I found here was `CXTranslationUnit_Incomplete` which would tell the parser that we're working with an intensionally incompelte translation unit here, proceed decisively!
+Initializing the single translation unit we'll be using for our project. The first four arguments pass in the CXIndex, path to source file, Clang arguments array and size of that array respectively. The 5th & 6th argument is used to send files to libclang that have not been saved to disk yet. I'm guessing IDEs(like Xcode) using this to get syntax highighting for code as you're typing on the fly. The last parameter is used to send in special options for the parsing. An interesting option I found here was `CXTranslationUnit_Incomplete` which would tell the parser that we're working with an intensionally incompelte translation unit here, proceed proudly!
 	    
 	    CXIndexAction action = clang_IndexAction_create(index);
 	    clang_indexTranslationUnit(action, NULL, &indexerCallbacks, sizeof(indexerCallbacks), CXIndexOpt_SuppressWarnings, translationUnit);
@@ -152,11 +153,20 @@ Initializing the single translation unit we'll be using for our project. The fir
 	    return 0;
 	}
 	
+Now that we have a translation unit representing our source code, we'll be getting libclang to run an index through it, triggering our above-mentioned callback methods when necessary. CXIndexAction is used to represent an indexing session.
 
+libclang comes with plenty of convenience methods to clean up memory after ourselves, so confidently destroy those CXStuff when you're doing using them!
 	
 	void m_indexDeclaration(CXClientData client_data, const CXIdxDeclInfo *declaration) {
 	    if (declaration->cursor.kind == CXCursor_ObjCInstanceMethodDecl) {
 	        if (strcmp(declaration->entityInfo->name, methodToFind) == 0) {
+				
+From my (weak) understanding, libclang's indexer would call `m_indexDeclaration()` whenever a new declaration has been discovered serially. This includes all of the languages' primitive delarations, Darwin related declarations, Obj-C language declarations, CoreGraphics declarations, SDK declarations and more. Running a counter shows that this method is invoked over 21,000 times.
+
+Thankfully there is a easy way to filter to only the kinds of declarations we care about. In this case, we only care about Objective-C instance method so let's filter that our. You can see the entire list of declaration types [here](http://clang.llvm.org/doxygen/group__CINDEX.html#gaaccc432245b4cd9f2d470913f9ef0013)
+
+Once we know it's a Obj-C instance method, we can do a simple `strcmp()` to confirm that it's correct method signature that we care about.
+				
 	            CXToken *tokens;
 	            unsigned int numTokens;
 	            CXCursor *cursors = 0;
@@ -166,6 +176,46 @@ Initializing the single translation unit we'll be using for our project. The fir
 	            cursors = (CXCursor *)malloc(numTokens * sizeof(CXCursor));
 	            clang_annotateTokens(translationUnit, tokens, numTokens, cursors);
 	            
+`CXToken`: A token is used to hold a single *token* of source code in it's simplest form. For example, the following code sequence:
+
+	- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+	    // Override point for customization after application launch.
+	    return YES;
+	}
+	
+would be tokenized into the array:
+
+	-
+	(
+	BOOL
+	)
+	application
+	:
+	(
+	UIApplication
+	*
+	)
+	application
+	didFinishLaunchingWithOptions
+	:
+	(
+	NSDictionary
+	*
+	)
+	launchOptions
+	{
+	// Override point for customization after application launch.
+	return
+	YES
+	;
+	}
+
+There are 5 *kinds* of CXTokens possible, they are Punctuation, Keyword, Identifier, Literal and Comment. You can retrieve their kinds using `clang_getTokenKind()`. If you want to print out what exact code the token represents use `clang_getTokenSpelling()`
+
+`CXCursor`: A CXCursor contains a cursor representation of an element in the AST. We will be using `clang_annotateTokens()` to map each CXToken in the tokens array to its respective cursors arrays for future cursor manipulaiton. A cursor can be used for many uses, we will be using it specifically to retrieve a CXToken's exact position(line & offset) in a source file.
+
+`clang_getCursorExtent` returns the physical boundaries of the source represented by that cursor. In this example, it return a CXSourceRange that represents the entire `application:didFinishLaunchingWithOptions:` method from it's first character to last.
+				
 	            int next = 0;
 	            for(int i=0; i < numTokens; i++) {
 	                if (next == 0) {
@@ -175,20 +225,23 @@ Initializing the single translation unit we'll be using for our project. The fir
 	                        next = 1;
 	                        continue;
 	                    }
-	                } else {
+	                }
+					
+
+					
+					else {
 	                    CXFile file;
 	                    unsigned line;
-	                    unsigned column;
 	                    unsigned offset;
 	                    
 	                    clang_getSpellingLocation(clang_getCursorLocation(cursors[i+1]),
 	                                              &file,
 	                                              &line,
-	                                              &column,
+	                                              NULL,
 	                                              &offset);
 	                    
 	                    const char* filename = clang_getCString(clang_getFileName(file));
-	                    printf("Method found in %s in line %d, offset %d, column %d", clang_getCString(clang_getFileName(file)), line, offset, column);
+	                    printf("Method found in %s in line %d, offset %d", clang_getCString(clang_getFileName(file)), line, offset);
 	                    
 	                    FILE * f;
 	                    f = fopen(filename, "r+");
