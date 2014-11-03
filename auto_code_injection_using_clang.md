@@ -37,7 +37,7 @@ Alright, let's begin the tutorial!
 ##Clone repo
 Let's clone the repo
 
-	git clone git@github.com:burnflare/libclang-experiments.git
+	git clone https://github.com/burnflare/libclang-experiments.git
 	cd libclang-experiments
 
 Although Xcode comes with a precompiled version of libclang built-in, we still would need to get our headers from the Clang project's repo(Try to make sure you're following the same dir structure as me here)
@@ -279,8 +279,14 @@ Code to rewrite the source file with the new code injection in between the curso
 	}
 
 ##Flaws & Improvements
-- 
-- Adding tokens automaticlly
+This is just my very first attempt in trying to demystify libclang. I've probably just covered 2% of libclang's API and there's so much more it can do. And I've probably made alot of trival mistakes in my methodology too.
+
+- Right now, this project requires you to manually point to an `AppDelegate.m` file. It would be much cooler if we could just point to a project folder and this tool would do the rest. Pretty sure it's quite doable but parsing through Xcode's .xcprojct file and looking for a main.m file then discovering an `AppDelegate` file from there.
+- Right now after finding out which token I want to insert myself into, I'm using C's ugly `fopen` and `fwrite` APIs to actually do the code insertion for me. I'm pretty sure a competent AST parser like libclang would have the ability for me to programatically create CXTokens and append them into my CXTranslationUnit and get the parser to generate the source file for me. I'm sure this is possible, but I've not discovered it yet, please tell me if you do!
 
 ##Conclusion
+It was very exciting trying to pry open Xcode and look at how it's refactoring and code completion tools work. Given many months, I might be able to built my own IDE too, wrapped around libclang.
+
+If you have any thoughts, comments or improvements, feel free to shout at me on [Twitter](http://twitter.com/burnflare), email me at vishnu [at] nushackers [dot] org or create an issue on the [Github](https://github.com/burnflare/libclang-experiments/) repo.
+
 We live in exciting times.
