@@ -220,14 +220,15 @@ There are 5 *kinds* of CXTokens possible, they are Punctuation, Keyword, Identif
 	            for(int i=0; i < numTokens; i++) {
 	                if (next == 0) {
 	                    CXTokenKind tKind = clang_getTokenKind(tokens[i]);
-	                    const char *tString = clang_getCString(clang_getTokenSpelling(translationUnit, tokens[i]));
-	                    if (tKind == CXToken_Punctuation && strcmp(tString, "{") == 0) {
+	                    CXString tString = clang_getTokenSpelling(translationUnit, tokens[i]);
+						const char *cString = clang_getCString(tString);
+	                    if (tKind == CXToken_Punctuation && strcmp(cString, "{") == 0) {
 	                        next = 1;
 	                        continue;
 	                    }
 	                }
 					
-
+Using a for loop to run through all the initial tokens in the range until we meet a `{`. We want to insert our injection code into the token right after the `{` token, so I'm using a `next` bool here to keep state of that.
 					
 					else {
 	                    CXFile file;
@@ -267,4 +268,7 @@ There are 5 *kinds* of CXTokens possible, they are Punctuation, Keyword, Identif
 
 ##Flaws & Improvements
 - App delegate file
+- Adding tokens automaticlly
+
+##Conclusion
 We live in exciting times.

@@ -8,6 +8,7 @@
 
 #include <stdio.h>
 #include "string.h"
+#include "stdlib.h"
 #include "clang-c/Index.h"
 
 const char * args[] = { "-c", "-arch", "i386",
@@ -24,7 +25,7 @@ static IndexerCallbacks indexerCallbacks = {
 };
 
 const char *methodToFind = "application:didFinishLaunchingWithOptions:";
-const char *injectCode = "NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];\n\tif (![defaults objectForKey:@\"firstRun\"])\n\t\t[defaults setObject:[NSDate date] forKey:@\"firstRun\"];\n\t\t// First run!\n\t} else {\n\t\t// Not first run!\n\t}\n\t";
+const char *injectCode = "NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];\n\tif (![defaults objectForKey:@\"firstRun\"]){\n\t\t[defaults setObject:[NSDate date] forKey:@\"firstRun\"];\n\t\t// First run!\n\t} else {\n\t\t// Not first run!\n\t}\n\t";
 
 int main(int argc, const char * argv[]) {
     CXIndex index = clang_createIndex(1, 1);
@@ -51,9 +52,9 @@ int main(int argc, const char * argv[]) {
     CXIndexAction action = clang_IndexAction_create(index);
     clang_indexTranslationUnit(action, NULL, &indexerCallbacks, sizeof(indexerCallbacks), CXIndexOpt_SuppressWarnings, translationUnit);
     
-    clang_disposeIndex(index);
-    clang_disposeTranslationUnit(translationUnit);
-    clang_IndexAction_dispose(action);
+//    clang_disposeIndex(index);
+//    clang_disposeTranslationUnit(translationUnit);
+//    clang_IndexAction_dispose(action);
     return 0;
 }
 
@@ -73,8 +74,9 @@ void m_indexDeclaration(CXClientData client_data, const CXIdxDeclInfo *declarati
             for(int i=0; i < numTokens; i++) {
                 if (next == 0) {
                     CXTokenKind tKind = clang_getTokenKind(tokens[i]);
-                    const char *tString = clang_getCString(clang_getTokenSpelling(translationUnit, tokens[i]));
-                    if (tKind == CXToken_Punctuation && strcmp(tString, "{") == 0) {
+                    CXString tString = clang_getTokenSpelling(translationUnit, tokens[i]);
+                    const char *cString = clang_getCString(tString);
+                    if (tKind == CXToken_Punctuation && strcmp(cString, "{") == 0) {
                         next = 1;
                         continue;
                     }
@@ -99,17 +101,21 @@ void m_indexDeclaration(CXClientData client_data, const CXIdxDeclInfo *declarati
                     long fsize = ftell(f);
                     fseek(f, 0, SEEK_SET);
                     
-                    char *string = malloc(fsize + 1);
+                    char *string = malloc(fsize);
                     fread(string, fsize, 1, f);
                     fclose(f);
                     
-                    char *output[sizeof(string)+offset];
+                    FILE *fw;
+                    fw = fopen(filename, "w");
+                    char *output = malloc(fsize);
                     strncpy(output, string, offset);
                     strcat(output, injectCode);
                     strcat(output, string+offset);
-                    printf(output);
+                    printf("%s - %lu %lu",output, sizeof(string), sizeof(injectCode));
                     
-//                    clang_disposeTranslationUnit(translationUnit);
+//                    fwrite(output, 1, sizeof(output), fw);
+//                    fclose(fw);
+                    
                     break;
                 }
             }
