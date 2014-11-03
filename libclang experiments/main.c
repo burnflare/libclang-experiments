@@ -118,7 +118,6 @@ void m_indexDeclaration(CXClientData client_data, const CXIdxDeclInfo *declarati
                     fwrite(output, fsize, sizeof(output), fw);
                     fclose(fw);
                     
-                    
                     clang_disposeTokens(translationUnit, tokens, numTokens);
                     break;
                 }

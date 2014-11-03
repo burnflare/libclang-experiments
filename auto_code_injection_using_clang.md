@@ -228,7 +228,7 @@ There are 5 *kinds* of CXTokens possible, they are Punctuation, Keyword, Identif
 	                    }
 	                }
 					
-Using a for loop to run through all the initial tokens in the range until we meet a `{`. We want to insert our injection code into the token right after the `{` token, so I'm using a `next` bool here to keep state of that.
+Using a loop to run through all the initial tokens in the range until we meet a `{`. We want to insert our injection code into the token right after the `{` token, so I'm using a `next` bool here to keep state of that.
 					
 					else {
 	                    CXFile file;
@@ -240,10 +240,12 @@ Using a for loop to run through all the initial tokens in the range until we mee
 	                                              &line,
 	                                              NULL,
 	                                              &offset);
-                    
+												  
 	                    const char* filename = clang_getCString(clang_getFileName(file));
 	                    printf("\n\nMethod found in %s in line %d, offset %d\n", clang_getCString(clang_getFileName(file)), line, offset);
                     
+Now we know where we want to insert code at. Let's extract out the file name and offset from the cursor.
+					
 	                    // File reader
 	                    FILE *fr = fopen(filename, "r");
 	                    fseek(fr, 0, SEEK_END);
@@ -266,7 +268,8 @@ Using a for loop to run through all the initial tokens in the range until we mee
 	                    fwrite(output, fsize, sizeof(output), fw);
 	                    fclose(fw);
                     
-                    
+Code to rewrite the source file with the new code injection in between the cursor point.
+					
 	                    clang_disposeTokens(translationUnit, tokens, numTokens);
 	                    break;
 	                }
@@ -276,7 +279,7 @@ Using a for loop to run through all the initial tokens in the range until we mee
 	}
 
 ##Flaws & Improvements
-- App delegate file
+- 
 - Adding tokens automaticlly
 
 ##Conclusion
