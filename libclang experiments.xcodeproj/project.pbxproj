@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		27E3C7591A06FC3E008EFBF6 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 27E3C7581A06FC3E008EFBF6 /* main.c */; };
+		27E3C7601A06FCA0008EFBF6 /* libclang.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 27E3C75F1A06FCA0008EFBF6 /* libclang.dylib */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -25,6 +26,7 @@
 /* Begin PBXFileReference section */
 		27E3C7551A06FC3D008EFBF6 /* libclang experiments */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "libclang experiments"; sourceTree = BUILT_PRODUCTS_DIR; };
 		27E3C7581A06FC3E008EFBF6 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
+		27E3C75F1A06FCA0008EFBF6 /* libclang.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libclang.dylib; path = Toolchains/XcodeDefault.xctoolchain/usr/lib/libclang.dylib; sourceTree = DEVELOPER_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -32,6 +34,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				27E3C7601A06FCA0008EFBF6 /* libclang.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -41,6 +44,7 @@
 		27E3C74C1A06FC3D008EFBF6 = {
 			isa = PBXGroup;
 			children = (
+				27E3C75F1A06FCA0008EFBF6 /* libclang.dylib */,
 				27E3C7571A06FC3D008EFBF6 /* libclang experiments */,
 				27E3C7561A06FC3D008EFBF6 /* Products */,
 			);
@@ -202,6 +206,17 @@
 		27E3C75D1A06FC3E008EFBF6 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = NO;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
+					"$(SRCROOT)/llvm/tools/clang/include/**",
+				);
+				LD_RUNPATH_SEARCH_PATHS = "$(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -209,6 +224,17 @@
 		27E3C75E1A06FC3E008EFBF6 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = NO;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
+					"$(SRCROOT)/llvm/tools/clang/include/**",
+				);
+				LD_RUNPATH_SEARCH_PATHS = "$(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
