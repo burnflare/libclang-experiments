@@ -9,9 +9,14 @@
 #include <stdio.h>
 #include "clang-c/Index.h"
 
-const char * args[] = { "-c","-arch","i386","-isysroot","/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk","-I","/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/6.0/include", "-Wno-objc-property-implementation"};
+const char * args[] = { "-c", "-arch", "i386",
+    "-isysroot", "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk",
+    "-I", "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/6.0/include",
+    "-Wno-objc-property-implementation", "-Wno-all"};
 
 CXTranslationUnit translationUnit;
+
+
 
 void m_indexDeclaration(CXClientData client_data, const CXIdxDeclInfo *declaration);
 

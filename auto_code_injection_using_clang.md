@@ -65,7 +65,7 @@ Next, move on to the *Build Settings* section and do the following
 - Enabe Modules(C and Objective-C) - Set this to No.
 	
 ##Explaining source code
-The original draft of this project was written in minimal C and mostly Objective-C -- I have an allergy for C, the language. But after some deliberation, I decided to refactor the entire app in C as going back and forth between C and Obj-C data types just added more muck to the code for little benefit. And C's not ***that*** bad :P
+The original draft of this project was written in minimal C and mostly Objective-C -- I have an allergy for C, the language, it gives me cooties. But after some deliberation, I decided to refactor the entire app in C as going back and forth between C and Obj-C data types just added more muck to the code for little benefit. And C's not ***that*** bad :P
 
 
 	//
@@ -78,10 +78,29 @@ The original draft of this project was written in minimal C and mostly Objective
 	
 	#include <stdio.h>
 	#include "clang-c/Index.h"
-	
-	const char * args[] = { "-c","-arch","i386","-isysroot","/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk","-I","/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/6.0/include", "-Wno-objc-property-implementation"};
-	
+
+Importing the header `clang-c/Index.h` that lives in our llvm project that we checked out. This header recursively includes everything else we would need to play with libclang
+
+	const char * args[] = { "-c", "-arch", "i386",
+    	"-isysroot", "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk",
+	    "-I", "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/6.0/include",
+    	"-Wno-objc-property-implementation"};
+
+Clang loves to eat all the arguments for breakfast, lunch and dinner. If you want to have fun, [take a look](https://www.dropbox.com/s/zls6pdfhrsuxiqa/Screenshot%202014-11-03%2011.27.09.png?dl=0) at the default list of arguments Xcode sends Clang whenever it tries to perform a compile. Have fun reverse engineering that!
+
+I tried to be as minimal as possible with my Clang arguments. Tried a bunch of permurations with all kinds of stuff and and this is what I ended up with:
+
+- `-c`: Expect C, the language.
+- `-arch i386`: Expect architecture x86.
+- `isysroot <path>`: Root directory for the compiler. Usually you want this to point to the root SDK you want to link against. I'm using the iPhoneSumulator SDK here since we're running this on a x86 CPU.
+- `-I <path>`: Add the path to the compiler's include search path.
+- `-Wno-objc-property-implementation`: Surpressing a frequent warning that shows up while compiling some of Apple's iOS8 headers.
+
+Fun, right?
+
 	CXTranslationUnit translationUnit;
+	
+
 	
 	void m_indexDeclaration(CXClientData client_data, const CXIdxDeclInfo *declaration);
 	
