@@ -24,9 +24,26 @@ First things first, I was pretty confident that Xcode was relying on some extra 
 
 Further googling mojo revealed that libclang was exactly what I was looking for. The LLVM project trivially describes [libclang](http://clang.llvm.org/doxygen/group__CINDEX.html) as "a stable high level C interface to clang". If you don't already know, Clang is modern compiler for C, C++ and Objective-C that uses LLVM as it's backend. Clang was originally sarted by Apple as a modern replacement to the 25 year old, very much hacked, recursively named, GNU Compiler Collection(GCC). The Clang project is also now stable enough to be the primary compiler for all iOS/Mac apps for the past few years. And libclang seemed like a way to 'talk' to Clang. Perfect, exactly what I wanted.
 
-Unfortunately, libclang isn't very easy to use. Its website is just a simple doxygen page with no usage or sample code. Unable to find sample code anywhere on the internet, it was painful, frustrating and I made mistakes all over the place. Hopefully through this project, you can save some time in your dealings with libclang and help me improve my methods too.
+Unfortunately, libclang isn't very easy to use. Its website is just a simple doxygen page with no usage or sample code. Unable to find sample code anywhere on the internet, it was painful, frustrating and I made a lot of mistakes all over the place. This post aims to save you time and a bunch of mistakes I made while trying to tame down libclang.
 
-You can follow along here: https://github.com/burnflare/libclang-experiments
+Alright, let's begin the tutorial!
+
+##Clone repo
+Let's clone the repo
+
+	git clone git@github.com:burnflare/libclang-experiments.git
+	cd libclang-experiments
+
+Although Xcode comes with a precompiled version of libclang built-in, we still would need to get our headers from the Clang project's repo(Try to make sure you're following the same dir structure as me here)
+	
+	git clone http://llvm.org/git/llvm.git
+	cd llvm/tools
+	git clone http://llvm.org/git/clang.git
+	
+##XCode configuration
+Now, let's verify that the `libclang-experiments` project is in a valid state, ensuring it's linked to all the right binaries and header paths. If you're trying to get libclang working on your own project, you should reproduce the steps mentioned in this section.
+
+
 
 Before I explain the source code, let's checkout the project and clone out LLVM
 
