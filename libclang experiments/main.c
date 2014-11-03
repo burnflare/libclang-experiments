@@ -52,9 +52,9 @@ int main(int argc, const char * argv[]) {
     CXIndexAction action = clang_IndexAction_create(index);
     clang_indexTranslationUnit(action, NULL, &indexerCallbacks, sizeof(indexerCallbacks), CXIndexOpt_SuppressWarnings, translationUnit);
     
-//    clang_disposeIndex(index);
-//    clang_disposeTranslationUnit(translationUnit);
-//    clang_IndexAction_dispose(action);
+    clang_disposeIndex(index);
+    clang_disposeTranslationUnit(translationUnit);
+    clang_IndexAction_dispose(action);
     return 0;
 }
 
@@ -80,6 +80,7 @@ void m_indexDeclaration(CXClientData client_data, const CXIdxDeclInfo *declarati
                         next = 1;
                         continue;
                     }
+                    clang_disposeString(tString);
                 }
                 else {
                     CXFile file;
@@ -93,29 +94,32 @@ void m_indexDeclaration(CXClientData client_data, const CXIdxDeclInfo *declarati
                                               &offset);
                     
                     const char* filename = clang_getCString(clang_getFileName(file));
-                    printf("Method found in %s in line %d, offset %d", clang_getCString(clang_getFileName(file)), line, offset);
+                    printf("\n\nMethod found in %s in line %d, offset %d\n", clang_getCString(clang_getFileName(file)), line, offset);
                     
-                    FILE *f;
-                    f = fopen(filename, "r+");
-                    fseek(f, 0, SEEK_END);
-                    long fsize = ftell(f);
-                    fseek(f, 0, SEEK_SET);
+                    // File reader
+                    FILE *fr = fopen(filename, "r");
+                    fseek(fr, 0, SEEK_END);
+                    long fsize = ftell(fr);
+                    fseek(fr, 0, SEEK_SET);
                     
-                    char *string = malloc(fsize);
-                    fread(string, fsize, 1, f);
-                    fclose(f);
+                    // Reading file to string
+                    char *input = malloc(fsize);
+                    fread(input, fsize, 1, fr);
+                    fclose(fr);
                     
-                    FILE *fw;
-                    fw = fopen(filename, "w");
+                    // Making an output that is input(start till offset) + code injection + input(offset till end)
+                    FILE *fw = fopen(filename, "w");
                     char *output = malloc(fsize);
-                    strncpy(output, string, offset);
+                    strncpy(output, input, offset);
                     strcat(output, injectCode);
-                    strcat(output, string+offset);
-                    printf("%s - %lu %lu",output, sizeof(string), sizeof(injectCode));
+                    strcat(output, input+offset);
                     
-//                    fwrite(output, 1, sizeof(output), fw);
-//                    fclose(fw);
+                    // Rewrite the whole file with output string
+                    fwrite(output, fsize, sizeof(output), fw);
+                    fclose(fw);
                     
+                    
+                    clang_disposeTokens(translationUnit, tokens, numTokens);
                     break;
                 }
             }

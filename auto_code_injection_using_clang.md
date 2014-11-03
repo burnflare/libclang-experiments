@@ -234,31 +234,40 @@ Using a for loop to run through all the initial tokens in the range until we mee
 	                    CXFile file;
 	                    unsigned line;
 	                    unsigned offset;
-	                    
+                    
 	                    clang_getSpellingLocation(clang_getCursorLocation(cursors[i+1]),
 	                                              &file,
 	                                              &line,
 	                                              NULL,
 	                                              &offset);
-	                    
+                    
 	                    const char* filename = clang_getCString(clang_getFileName(file));
-	                    printf("Method found in %s in line %d, offset %d", clang_getCString(clang_getFileName(file)), line, offset);
-	                    
-	                    FILE * f;
-	                    f = fopen(filename, "r+");
-	                    fseek(f, 0, SEEK_END);
-	                    long fsize = ftell(f);
-	                    fseek(f, 0, SEEK_SET);
-	                    
-	                    char *string = malloc(fsize + 1);
-	                    fread(string, fsize, 1, f);
-	                    fclose(f);
-	                    
-	                    char *output[sizeof(string)+offset];
-	                    strncpy(output, string, offset);
+	                    printf("\n\nMethod found in %s in line %d, offset %d\n", clang_getCString(clang_getFileName(file)), line, offset);
+                    
+	                    // File reader
+	                    FILE *fr = fopen(filename, "r");
+	                    fseek(fr, 0, SEEK_END);
+	                    long fsize = ftell(fr);
+	                    fseek(fr, 0, SEEK_SET);
+                    
+	                    // Reading file to string
+	                    char *input = malloc(fsize);
+	                    fread(input, fsize, 1, fr);
+	                    fclose(fr);
+                    
+	                    // Making an output that is input(start till offset) + code injection + input(offset till end)
+	                    FILE *fw = fopen(filename, "w");
+	                    char *output = malloc(fsize);
+	                    strncpy(output, input, offset);
 	                    strcat(output, injectCode);
-	                    strcat(output, string+offset);
-	                    printf(output);
+	                    strcat(output, input+offset);
+                    
+	                    // Rewrite the whole file with output string
+	                    fwrite(output, fsize, sizeof(output), fw);
+	                    fclose(fw);
+                    
+                    
+	                    clang_disposeTokens(translationUnit, tokens, numTokens);
 	                    break;
 	                }
 	            }
