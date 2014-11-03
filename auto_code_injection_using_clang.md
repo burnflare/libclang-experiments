@@ -1,8 +1,9 @@
-#Auto code injection using libClang.dylib
+#Auto code injection using libclang
 
+##Motivation
 I've always been fascinated by IDEs. Long have I wondered how do they what they do: Syntax highlighting, code completion, method refactoring and so much more. Recently, I had a bunch of time on my hands and I decided to figure out how an IDE works it's magic. I chose to play around with XCode because that's my favourite IDE.
 
-Here's the challenge I posed to myself: Given any typical modern iOS project, use the IDE's AST(Abstract Syntax Tree) parsing tools to insert a bunch of code into a predetermined method. To keep this simple, we'll add code to an app's `application:didFinishLaunchingWithOptions` since we can almost always gaurentee that method would exist. So I would like this turn this:
+Here's the challenge I presented to myself: Given any typical modern iOS project, use the IDE's AST(Abstract Syntax Tree) parsing tools to insert a bunch of code into a predetermined method. To keep this simple, we'll add code to an app's `application:didFinishLaunchingWithOptions` since we can almost always gaurentee that method would exist. So I would like this turn this:
 
 	- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary 	*)launchOptions {
     	// Override point for customization after application launch.
@@ -11,9 +12,13 @@ Here's the challenge I posed to myself: Given any typical modern iOS project, us
 into:
 	
 	- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary 	*)launchOptions {
-		[Initialize code]
     	// Override point for customization after application launch.
-	    return YES;
+    	NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];  
+		if (![defaults objectForKey:@"firstRun"])
+			[defaults setObject:[NSDate date] forKey:@"firstRun"];
+
+			[[NSUserDefaults standardUserDefaults] synchronize];
+			return YES;
 	}
 So fun.
 
@@ -57,8 +62,10 @@ Next, move on to the *Build Settings* section and do the following
 	- `$(SRCROOT)` is a Xcode variable that points to the root of this project. For me, that's `/Users/vishnu/dev/libclang-experiments`. Obviously Your Roots Will Vary(YRWV).
 - Add a new Library Search Paths: `$(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib`
 	- Even though we've 'added' `libclang.dylib` into our Xcode's project navigator, we still need to tell the compiler to look for dynamic libraries in that search path or else it won't find it.
+- Enabe Modules(C and Objective-C) - Set this to No.
 	
-asdf
+##Explaining source code
+The original draft of this project was written in minimal C and mostly Objective-C -- I have an allergy for C, the language. But after some deliberation, I decided to refactor the entire app in C as going back and forth between C and Obj-C data types just added more muck to the code for little benefit. And C's not ***that*** bad :P
 
 
 	//
