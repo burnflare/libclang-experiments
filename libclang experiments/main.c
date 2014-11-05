@@ -30,7 +30,7 @@ const char *injectCode = "NSUserDefaults *defaults = [NSUserDefaults standardUse
 int main(int argc, const char * argv[]) {
     CXIndex index = clang_createIndex(1, 1);
     
-    const char *sourceFile = "/Users/vishnu/Desktop/FlappyCode/FlappyCode/AppDelegate.m";
+    const char *sourceFile = "/Users/vishnu/dev/FlappyCode/FlappyCode/AppDelegate.m";
     
     if (!index) {
         printf("Couldn't create CXIndex");
